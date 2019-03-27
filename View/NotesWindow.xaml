@@ -5,11 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NotesApp.View"
         xmlns:vm="clr-namespace:NotesApp.ViewModel"
-        xmlns:uc1="clr-namespace:NotesApp.View.UserControls"        
+        xmlns:uc1="clr-namespace:NotesApp.View.UserControls"     
+        xmlns:cv="clr-namespace:NotesApp.ViewModel.Converters"
+        xmlns:b="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         mc:Ignorable="d"
         Title="NotesWindowRafael" Height="400" Width="600">
     <Window.Resources>
         <vm:NotesVM x:Key="vm"/>
+        <cv:BoolToVisConverter x:Key="boolToVis"/>
     </Window.Resources>
     <DockPanel DataContext="{StaticResource vm}">
         <Menu DockPanel.Dock="Top">
@@ -37,10 +40,19 @@
                 <DataTemplate>
                     <Grid>
                         <uc1:Notebook  DisplayNotebook="{Binding}"/>
-                        <TextBox Text="{Binding Name,Mode=TwoWay}"/>
+                        <TextBox Text="{Binding Name,Mode=TwoWay}"
+                                 Visibility="{Binding Source={StaticResource vm},Path=IsEditing,Converter={StaticResource boolToVis}}"
+                                 />
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="LostFocus">
+                                <b:InvokeCommandAction Command="{Binding Source={StaticResource vm},Path=HasEditedCommand}"
+                                                       CommandParameter="{Binding}"/>
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
                         <Grid.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Rename"/>
+                                <MenuItem Header="Rename" 
+                                          Command="{Binding Source={StaticResource vm},Path=BeginEditCommand}"/>
                             </ContextMenu>
                         </Grid.ContextMenu>
                     </Grid>

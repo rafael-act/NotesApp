@@ -3,27 +3,21 @@ using NotesApp.ViewModel.Commands;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NotesApp.ViewModel
 {
-    public class NotesVM
+    public class NotesVM : INotifyPropertyChanged
     {
-        public NotesVM()
-        {
-            NewNotebookCommand = new NewNotebookCommand(this);
-            NewNoteCommand = new NewNoteCommand(this);
+        public bool IsEditing { get { return IsEditing; } set { IsEditing = value; OnProptertyChanged("IsEditing"); } }
 
-            Notebooks = new ObservableCollection<Notebook>();
-            Notes = new ObservableCollection<Note>();
-
-            ReadNotebooks();
-            ReadNotes();
-        }
         public ObservableCollection<Notebook> Notebooks { get; set; }
         private Notebook selectedNotebook;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Notebook SelectedNotebook
         {
@@ -40,6 +34,29 @@ namespace NotesApp.ViewModel
 
         public NewNotebookCommand NewNotebookCommand { get; set; }
         public NewNoteCommand NewNoteCommand { get; set; }
+        public BeginEditCommand BeginEditCommand { get; set; }
+        public HasEditedCommand HasEditedCommand { get; set; }
+        public NotesVM()
+        {
+            IsEditing = false;
+            NewNotebookCommand = new NewNotebookCommand(this);
+            NewNoteCommand = new NewNoteCommand(this);
+            BeginEditCommand = new BeginEditCommand(this);
+            HasEditedCommand = new HasEditedCommand(this);
+            Notebooks = new ObservableCollection<Notebook>();
+            Notes = new ObservableCollection<Note>();
+
+            ReadNotebooks();
+            ReadNotes();
+        }
+
+        private void OnProptertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
 
         public void CreateNote(int notebookID)
         {
@@ -60,7 +77,8 @@ namespace NotesApp.ViewModel
             Notebook newNotebook = new Notebook()
             {
                 Name = "New notebook"
-                , UserId = int.Parse(App.UserId)
+                ,
+                UserId = int.Parse(App.UserId)
             };
             DatabaseHelper.Insert(newNotebook);
 
@@ -113,8 +131,21 @@ namespace NotesApp.ViewModel
                             conn.CreateTable<Note>();
                         }
                     }
-                    
+
                 }
+            }
+        }
+        public void StartEditing()
+        {
+            IsEditing = true;
+        }
+        public void HasRenamed(Notebook notebook)
+        {
+            if (notebook != null)
+            {
+                DatabaseHelper.Update(notebook);
+                IsEditing = false;
+                ReadNotebooks();
             }
         }
     }
